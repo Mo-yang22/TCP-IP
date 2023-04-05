@@ -18,11 +18,13 @@ int main(int argc, char *argv[])
         pid = fork(); //这里的子进程将在 21 行通过 exit() 函数终止
         if (pid == 0)
         {
+            sleep(30);
             exit(7);
         }
         else
         {
             printf("Child PID: %d \n", pid);
+            exit(0);
             wait(&status);         //之间终止的子进程相关信息将被保存到 status 中，同时相关子进程被完全销毁
             if (WIFEXITED(status)) //通过 WIFEXITED 来验证子进程是否正常终止。如果正常终止，则调用 WEXITSTATUS 宏输出子进程返回值
                 printf("Child send one: %d \n", WEXITSTATUS(status));

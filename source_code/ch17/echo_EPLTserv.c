@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <sys/epoll.h>
 
-#define BUF_SIZE 2
+#define BUF_SIZE 4
 #define EPOLL_SIZE 50
 void error_handling(char *message);
 
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
             {
                 adr_sz = sizeof(clnt_adr);
                 clnt_sock = accept(serv_sock, (struct sockaddr *)&clnt_adr, &adr_sz);
-                event.events = EPOLLIN;
+                event.events = EPOLLIN|EPOLLET;
                 event.data.fd = clnt_sock; //把客户端套接字添加进去
                 epoll_ctl(epfd, EPOLL_CTL_ADD, clnt_sock, &event);
                 printf("connected client : %d \n", clnt_sock);

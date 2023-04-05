@@ -4,69 +4,18 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-
-#define BUF_SIZE 10240
+#define BUF_SIZE 1024
+#define OPSZ 4
 void error_handling(char *message);
-
-char res[10];
-char *calc(char *s)
-{
-    int len = strlen(s), i;
-    int n = 0;
-    for (i = 0; i < len; i++)
-        if (s[i] == ' ')
-        {
-            i++;
-            break;
-        }
-        else
-            n = n * 10 + (s[i] - '0');
-    int *num = malloc(sizeof(int) * n);
-    int tot = 0, x = 0;
-
-    for (; i < len; i++)
-    {
-        if (s[i] == '+' || s[i] == '*' || s[i] == '-')
-            break;
-        if (s[i] == ' ')
-        {
-            num[tot++] = x;
-            x = 0;
-        }
-        else
-            x = x * 10 + (s[i] - '0');
-    }
-    int ans = 0;
-    if (s[i] == '+')
-    {
-        for (int i = 0; i < tot; i++)
-            ans += num[i];
-    }
-    else if (s[i] == '*')
-    {
-        ans = 1;
-        for (int i = 0; i < tot; i++)
-            ans *= num[i];
-    }
-    else if (s[i] == '-')
-    {
-        ans = num[0];
-        for (int i = 1; i < tot; i++)
-            ans -= num[i];
-    }
-    free(num);
-    sprintf(res, "%d", ans);
-    return res;
-}
+int calculate(int opnum, int opnds[], char oprator);
 int main(int argc, char *argv[])
 {
     int serv_sock, clnt_sock;
-    char message[BUF_SIZE];
-    int str_len;
-
+    char opinfo[BUF_SIZE];
+    int result, opnd_cnt, i;
+    int recv_cnt, recv_len;
     struct sockaddr_in serv_adr, clnt_adr;
     socklen_t clnt_adr_sz;
-
     if (argc != 2)
     {
         printf("Usage : %s <port>\n", argv[0]);
@@ -84,21 +33,48 @@ int main(int argc, char *argv[])
 
     if (bind(serv_sock, (struct sockaddr *)&serv_adr, sizeof(serv_adr)) == -1)
         error_handling("bind() error");
-
     if (listen(serv_sock, 5) == -1)
         error_handling("listen() error");
-
     clnt_adr_sz = sizeof(clnt_adr);
-    clnt_sock = accept(serv_sock, (struct sockaddr *)&clnt_adr, &clnt_adr_sz);
-    if (clnt_sock == -1)
-        error_handling("accept() error");
-    str_len = read(clnt_sock, message, BUF_SIZE);
-    write(clnt_sock, calc(message), str_len);
-    close(clnt_sock);
+    for (int i = 0; i < 5; i++)
+    {
+        opnd_cnt = 0;
+        clnt_sock = accept(serv_sock, (struct sockaddr *)&clnt_adr, &clnt_adr_sz);
+        read(clnt_sock, &opnd_cnt, 1);
+
+        recv_len = 0;
+        while ((opnd_cnt * OPSZ + 1) > recv_len)
+        {
+            recv_cnt = read(clnt_sock, &opinfo[recv_len], BUF_SIZE - 1);
+            recv_len += recv_cnt;
+        }
+        result = calculate(opnd_cnt, (int *)opinfo, opinfo[recv_len - 1]);
+        write(clnt_sock, (char *)&result, sizeof(result));
+        close(clnt_sock);
+    }
     close(serv_sock);
     return 0;
 }
-
+int calculate(int opnum, int opnds[], char op)
+{
+    int result = opnds[0], i;
+    switch (op)
+    {
+    case '+':
+        for (i = 1; i < opnum; i++)
+            result += opnds[i];
+        break;
+    case '-':
+        for (i = 1; i < opnum; i++)
+            result -= opnds[i];
+        break;
+    case '*':
+        for (i = 1; i < opnum; i++)
+            result *= opnds[i];
+        break;
+    }
+    return result;
+}
 void error_handling(char *message)
 {
     fputs(message, stderr);

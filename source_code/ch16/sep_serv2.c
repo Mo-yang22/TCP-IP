@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
     fputs("You are awesome! \n", writefp);
     fflush(writefp);
 
-    shutdown(fileno(writefp), SHUT_WR); //对 fileno 产生的文件描述符使用 shutdown 进入半关闭状态
+    shutdown(fileno(readfp), SHUT_WR); //对 fileno 产生的文件描述符使用 shutdown 进入半关闭状态
     fclose(writefp);
 
     fgets(buf, sizeof(buf), readfp);

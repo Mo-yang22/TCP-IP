@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     pthread_create(&id_t2, NULL, thread_summation, (void *)range2);
 
     pthread_join(id_t1, NULL);
-    pthread_join(id_t2, NULL);
+    pthread_join(id_t2, NULL);//要等两个线程都结束
     printf("result: %d \n", sum);
     return 0;
 }
